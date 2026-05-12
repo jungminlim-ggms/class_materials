@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>정보 수업: 디지털 자료와 이진수</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --chalk-white: #f0f0f0;
+            --board-green: #1a3a34;
+        }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #2c2c2c;
+            color: var(--chalk-white);
+            margin: 0;
+            overflow: hidden;
+        }
+        .chalk-font {
+            font-family: 'Nanum Pen Script', cursive;
+        }
+        .slide {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            padding: 40px;
+            box-sizing: border-box;
+            background-color: var(--board-green);
+            border: 15px solid #5d4037;
+            position: relative;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.5);
+        }
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+        }
+        .chalk-border {
+            border: 2px solid rgba(240, 240, 240, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--chalk-white);
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            background: var(--chalk-white);
+            color: var(--board-green);
+        }
+        .binary-switch {
+            width: 60px;
+            height: 100px;
+            border: 3px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            cursor: pointer;
+            user-select: none;
+        }
+        .binary-switch.on {
+            background-color: #fbbf24;
+            color: #1a3a34;
+        }
+        #progress-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+        }
+        .dot.active {
+            background: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="slide active" id="slide-1">
+        <div class="flex-1 flex flex-col items-center justify-center">
+            <h1 class="text-7xl chalk-font mb-6">0과 1로 만드는 세상</h1>
+            <p class="text-3xl chalk-font opacity-80">중학교 2학년 정보: 디지털 자료의 표현</p>
+            <div class="mt-12 p-4 border-2 border-dashed border-white/50">
+                <p class="text-xl">컴퓨터는 어떻게 우리가 쓰는 숫자를 이해할까?</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide" id="slide-2">
+        <h2 class="text-5xl chalk-font mb-10 border-b-2 border-white/30 pb-4">오늘의 학습 목표</h2>
+        <div class="space-y-8 mt-10">
+            <div class="flex items-start gap-4">
+                <span class="text-4xl">1.</span>
+                <p class="text-3xl leading-relaxed">디지털 자료와 아날로그 자료의 차이점을 논리적으로 비교할 수 있다.</p>
+            </div>
+            <div class="flex items-start gap-4">
+                <span class="text-4xl">2.</span>
+                <p class="text-3xl leading-relaxed">이진수의 개념을 이해하고, 십진수를 이진수로 변환할 수 있다.</p>
+            </div>
+            <div class="flex items-start gap-4">
+                <span class="text-4xl">3.</span>
+                <p class="text-3xl leading-relaxed">비트(Bit)와 바이트(Byte)의 관계를 수치적으로 계산할 수 있다.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide" id="slide-3">
+        <h2 class="text-5xl chalk-font mb-6">아날로그 vs 디지털</h2>
+        <div class="grid grid-cols-2 gap-10 mt-10">
+            <div class="chalk-border">
+                <h3 class="text-3xl mb-4 text-yellow-300">아날로그 (Analog)</h3>
+                <ul class="list-disc ml-6 space-y-4 text-xl">
+                    <li>연속적인 값의 변화</li>
+                    <li>예: 수은 온도계, LP판, 시침이 있는 시계</li>
+                    <li>단점: 보관이나 복사 시 잡음(노이즈) 발생</li>
+                </ul>
+            </div>
+            <div class="chalk-border">
+                <h3 class="text-3xl mb-4 text-blue-300">디지털 (Digital)</h3>
+                <ul class="list-disc ml-6 space-y-4 text-xl">
+                    <li>끊어지는 값 (이산적인 값)</li>
+                    <li>예: 디지털 온도계, CD, 숫자 시계</li>
+                    <li>장점: 복사가 정확하고 가공이 쉬움</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide" id="slide-4">
+        <h2 class="text-5xl chalk-font mb-6">컴퓨터의 언어: 이진수</h2>
+        <div class="flex flex-col items-center justify-center flex-1">
+            <div class="text-2xl mb-8 text-center italic">"컴퓨터는 전기로 작동하며, 전기가 흐르는지(1) 흐르지 않는지(0)만 구분합니다."</div>
+            <div class="flex gap-20">
+                <div class="text-center">
+                    <div class="w-32 h-32 bg-yellow-400 rounded-full shadow-[0_0_50px_rgba(251,191,36,0.8)] mb-4"></div>
+                    <p class="text-4xl font-bold">1 (ON)</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-32 h-32 bg-gray-700 rounded-full mb-4 border-2 border-white/20"></div>
+                    <p class="text-4xl font-bold">0 (OFF)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide" id="slide-5">
+        <h2 class="text-5xl chalk-font mb-6">이진수의 자릿값 (Base 2)</h2>
+        <div class="flex justify-around items-center h-full pb-20">
+            <div class="text-center">
+                <p class="text-2xl mb-2">2³</p>
+                <div class="text-5xl font-bold border-2 p-4 w-24">8</div>
+            </div>
+            <div class="text-center">
+                <p class="text-2xl mb-2">2²</p>
+                <div class="text-5xl font-bold border-2 p-4 w-24">4</div>
+            </div>
+            <div class="text-center">
+                <p class="text-2xl mb-2">2¹</p>
+                <div class="text-5xl font-bold border-2 p-4 w-24">2</div>
+            </div>
+            <div class="text-center">
+                <p class="text-2xl mb-2">2⁰</p>
+                <div class="text-5xl font-bold border-2 p-4 w-24">1</div>
+            </div>
+        </div>
+        <p class="text-center text-2xl italic">"오른쪽 끝에서부터 1, 2, 4, 8, 16... 순서로 두 배씩 커집니다."</p>
+    </div>
+
+    <div class="slide" id="slide-6">
+        <h2 class="text-5xl chalk-font mb-6">십진수 → 이진수 변환법</h2>
+        <div class="flex-1 flex items-center justify-center gap-10">
+            <div class="chalk-border text-2xl w-1/2">
+                <p class="mb-4">방법 1: 2로 계속 나누기</p>
+                <p class="opacity-70">나머지 값을 거꾸로 읽으면 이진수가 됩니다.</p>
+                <div class="mt-6 font-mono bg-black/20 p-4">
+                    13 / 2 = 6 ... 1<br>
+                    6 / 2 = 3 ... 0<br>
+                    3 / 2 = 1 ... 1<br>
+                    1 / 2 = 0 ... 1<br>
+                    => 1101₂
+                </div>
+            </div>
+            <div class="chalk-border text-2xl w-1/2">
+                <p class="mb-4">방법 2: 자릿값 덧셈</p>
+                <p class="opacity-70">필요한 자릿값을 더해 숫자를 만듭니다.</p>
+                <div class="mt-6 font-mono bg-black/20 p-4">
+                    13 = 8 + 4 + 1<br>
+                    (8) (4) (2) (1)<br>
+                     1   1   0   1<br>
+                    => 1101₂
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide" id="slide-7">
+        <div class="flex-1 flex flex-col items-center justify-center">
+            <h1 class="text-6xl chalk-font text-yellow-300 mb-8">MISSION: 이진수 코드 브레이커</h1>
+            <p class="text-2xl mb-10 text-center leading-relaxed">
+                컴퓨터의 비밀 금고를 열어야 합니다.<br>
+                제시된 십진수를 보고 아래 스위치를 조작하여 정확한 이진수를 만드세요!
+            </p>
+            <button class="btn text-2xl" onclick="startGame()">게임 시작하기</button>
+        </div>
+    </div>
+
+    <div class="slide" id="slide-8">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-4xl chalk-font">LV. <span id="game-lv">1</span> - 코드 해독 중</h2>
+            <div class="text-2xl">SCORE: <span id="game-score" class="text-yellow-400">0</span></div>
+        </div>
+        <div class="flex-1 flex flex-col items-center justify-center">
+            <div class="text-2xl mb-2">만들어야 할 십진수:</div>
+            <div id="target-number" class="text-8xl font-bold text-white mb-12">10</div>
+            
+            <div class="flex gap-6 mb-12">
+                <div class="flex flex-col items-center">
+                    <span class="mb-2 text-xl opacity-60">8</span>
+                    <div class="binary-switch" onclick="toggleSwitch(this, 8)">0</div>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="mb-2 text-xl opacity-60">4</span>
+                    <div class="binary-switch" onclick="toggleSwitch(this, 4)">0</div>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="mb-2 text-xl opacity-60">2</span>
+                    <div class="binary-switch" onclick="toggleSwitch(this, 2)">0</div>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="mb-2 text-xl opacity-60">1</span>
+                    <div class="binary-switch" onclick="toggleSwitch(this, 1)">0</div>
+                </div>
+            </div>
+
+            <div class="text-3xl font-mono">현재 합계: <span id="current-sum" class="text-blue-400 font-bold">0</span></div>
+            <button class="btn mt-10" onclick="checkCode()">코드 제출 (Submit)</button>
+        </div>
+    </div>
+
+    <div class="slide" id="slide-9">
+        <h2 class="text-5xl chalk-font mb-10">디지털 자료의 단위</h2>
+        <div class="grid grid-cols-2 gap-10">
+            <div class="chalk-border text-center">
+                <h3 class="text-4xl font-bold mb-4">Bit (비트)</h3>
+                <p class="text-xl">이진수 한 자리 (0 또는 1)<br>자료 표현의 최소 단위</p>
+            </div>
+            <div class="chalk-border text-center">
+                <h3 class="text-4xl font-bold mb-4">Byte (바이트)</h3>
+                <p class="text-xl">8개의 비트가 모인 것<br>1 Byte = 8 Bit</p>
+            </div>
+        </div>
+        <div class="mt-12 chalk-border">
+            <p class="text-2xl text-center">자료의 크기: B → KB → MB → GB → TB (각 1024배)</p>
+        </div>
+    </div>
+
+    <div class="slide" id="slide-10">
+        <div class="flex-1 flex flex-col items-center justify-center">
+            <h1 class="text-6xl chalk-font text-pink-300 mb-8">실력 확인! 1분 퀴즈</h1>
+            <p class="text-2xl mb-10 text-center">학습한 내용을 바탕으로 문제를 풀어보세요.</p>
+            <div id="quiz-area" class="w-full max-w-2xl bg-black/30 p-8 rounded-lg border-2 border-white/20">
+                <p id="quiz-q" class="text-3xl mb-6">Q1. 8비트는 몇 바이트일까요?</p>
+                <div id="quiz-options" class="grid grid-cols-2 gap-4">
+                    <button class="btn text-xl" onclick="answerQuiz(1)">1 Byte</button>
+                    <button class="btn text-xl" onclick="answerQuiz(0)">8 Byte</button>
+                    <button class="btn text-xl" onclick="answerQuiz(0)">16 Byte</button>
+                    <button class="btn text-xl" onclick="answerQuiz(0)">0.5 Byte</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide" id="slide-11">
+        <h2 class="text-5xl chalk-font mb-10">오늘의 학습 정리</h2>
+        <div class="flex gap-10 items-center justify-center flex-1">
+            <div class="w-1/2 space-y-6 text-2xl">
+                <p>✅ 디지털은 끊어지는 수로 정보를 표현한다.</p>
+                <p>✅ 컴퓨터는 이진법(0, 1)을 사용한다.</p>
+                <p>✅ 비트 8개가 모여 1바이트가 된다.</p>
+            </div>
+            <div class="w-1/2 chalk-border text-center flex flex-col items-center">
+                <h3 class="text-3xl mb-6">나의 획득 배지</h3>
+                <div id="badge-display" class="flex gap-4">
+                    <div class="w-24 h-24 rounded-full bg-gray-600 flex items-center justify-center border-2 border-white/20 opacity-50">?</div>
+                    <div class="w-24 h-24 rounded-full bg-gray-600 flex items-center justify-center border-2 border-white/20 opacity-50">?</div>
+                    <div class="w-24 h-24 rounded-full bg-gray-600 flex items-center justify-center border-2 border-white/20 opacity-50">?</div>
+                </div>
+                <p class="mt-4 text-yellow-300" id="rank-text">아직 병아리 프로그래머입니다!</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide" id="slide-12">
+        <div class="flex-1 flex flex-col items-center justify-center">
+            <h1 class="text-7xl chalk-font mb-10">수고하셨습니다!</h1>
+            <p class="text-3xl chalk-font opacity-80 mb-12">다음 시간에는 이미지와 소리가 디지털로 변환되는 과정을 배웁니다.</p>
+            <button class="btn text-xl" onclick="location.reload()">수업 다시보기</button>
+        </div>
+    </div>
+
+    <div class="fixed bottom-10 right-10 flex gap-4">
+        <button class="btn" onclick="changeSlide(-1)">이전</button>
+        <button class="btn" onclick="changeSlide(1)">다음</button>
+    </div>
+
+    <div id="progress-bar">
+        </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 12;
+        let gameScore = 0;
+        let gameLevel = 1;
+        let currentSum = 0;
+
+        function init() {
+            const pb = document.getElementById('progress-bar');
+            for(let i=1; i<=totalSlides; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'dot' + (i===1 ? ' active' : '');
+                dot.id = 'dot-' + i;
+                pb.appendChild(dot);
+            }
+        }
+
+        function changeSlide(dir) {
+            const next = currentSlide + dir;
+            if(next >= 1 && next <= totalSlides) {
+                document.getElementById('slide-' + currentSlide).classList.remove('active');
+                document.getElementById('dot-' + currentSlide).classList.remove('active');
+                currentSlide = next;
+                document.getElementById('slide-' + currentSlide).classList.add('active');
+                document.getElementById('dot-' + currentSlide).classList.add('active');
+            }
+        }
+
+        // Game Logic
+        function startGame() {
+            gameScore = 0;
+            gameLevel = 1;
+            document.getElementById('game-score').innerText = gameScore;
+            document.getElementById('game-lv').innerText = gameLevel;
+            nextTarget();
+            changeSlide(1);
+        }
+
+        function nextTarget() {
+            const max = gameLevel * 5 + 5;
+            const target = Math.floor(Math.random() * max) + 1;
+            document.getElementById('target-number').innerText = target;
+            currentSum = 0;
+            updateGameUI();
+            const switches = document.querySelectorAll('.binary-switch');
+            switches.forEach(s => {
+                s.innerText = '0';
+                s.classList.remove('on');
+            });
+        }
+
+        function toggleSwitch(el, value) {
+            if(el.classList.contains('on')) {
+                el.classList.remove('on');
+                el.innerText = '0';
+                currentSum -= value;
+            } else {
+                el.classList.add('on');
+                el.innerText = '1';
+                currentSum += value;
+            }
+            updateGameUI();
+        }
+
+        function updateGameUI() {
+            document.getElementById('current-sum').innerText = currentSum;
+        }
+
+        function checkCode() {
+            const target = parseInt(document.getElementById('target-number').innerText);
+            if(currentSum === target) {
+                alert('정답입니다! 코드가 해독되었습니다.');
+                gameScore += 10;
+                gameLevel++;
+                document.getElementById('game-score').innerText = gameScore;
+                document.getElementById('game-lv').innerText = gameLevel;
+                if(gameLevel > 3) {
+                    alert('금고 해제 성공! 마스터 배지를 획득했습니다.');
+                    updateBadges(3);
+                    changeSlide(1);
+                } else {
+                    nextTarget();
+                }
+            } else {
+                alert('코드가 일치하지 않습니다. 다시 확인하세요!');
+            }
+        }
+
+        // Quiz Logic
+        let quizIdx = 0;
+        const quizzes = [
+            {q: "Q1. 8비트는 몇 바이트일까요?", a: [1, 0, 0, 0], opt: ["1 Byte", "8 Byte", "16 Byte", "0.5 Byte"]},
+            {q: "Q2. 십진수 5를 이진수로 변환하면?", a: [0, 1, 0, 0], opt: ["100", "101", "110", "111"]},
+            {q: "Q3. 디지털 자료의 장점이 아닌 것은?", a: [0, 0, 1, 0], opt: ["가공이 쉽다", "복제가 정확하다", "연속적인 변화를 표현한다", "보관이 쉽다"]}
+        ];
+
+        function answerQuiz(isCorrect) {
+            if(isCorrect) {
+                alert('딩동댕!');
+                quizIdx++;
+                if(quizIdx < quizzes.length) {
+                    document.getElementById('quiz-q').innerText = quizzes[quizIdx].q;
+                    const btns = document.getElementById('quiz-options').querySelectorAll('button');
+                    quizzes[quizIdx].opt.forEach((o, i) => {
+                        btns[i].innerText = o;
+                        btns[i].setAttribute('onclick', `answerQuiz(${quizzes[quizIdx].a[i]})`);
+                    });
+                } else {
+                    alert('퀴즈 완료! 모든 문제를 맞혔습니다.');
+                    updateBadges(2);
+                    changeSlide(1);
+                }
+            } else {
+                alert('틀렸습니다. 다시 생각해보세요!');
+            }
+        }
+
+        function updateBadges(count) {
+            const container = document.getElementById('badge-display');
+            container.innerHTML = '';
+            const titles = ["초보 해커", "퀴즈 왕", "이진수 마스터"];
+            for(let i=0; i<count; i++) {
+                const b = document.createElement('div');
+                b.className = 'w-24 h-24 rounded-full bg-yellow-500 flex items-center justify-center border-2 border-white text-black font-bold text-xs text-center p-2';
+                b.innerText = titles[i];
+                container.appendChild(b);
+            }
+            document.getElementById('rank-text').innerText = "훌륭합니다! 디지털 전문가가 되셨군요.";
+        }
+
+        init();
+    </script>
+</body>
+</html>
