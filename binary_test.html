@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[수업자료] 중2 정보 - 디지털 자료의 표현과 이진수</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #1e3d2f; /* 칠판 색상 */
+        }
+        .chalk-text {
+            font-family: 'Gaegu', cursive;
+            color: #fcfbe3; /* 분필 흰색 */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .chalk-yellow {
+            color: #ffd56b;
+        }
+        .chalk-pink {
+            color: #ff9292;
+        }
+        .chalk-border {
+            border: 3px dashed #d4cfb4;
+        }
+        /* 커스텀 스크롤바 방지 및 깔끔한 슬라이드 전환 */
+        .slide-container {
+            min-height: calc(100vh - 120px);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 text-[#fcfbe3] min-h-screen flex flex-col justify-between">
+
+    <header class="w-full max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center border-b-2 border-dashed border-[#d4cfb4] pb-4 mb-4">
+        <div class="text-left">
+            <span class="text-xs bg-[#2d5a44] px-2 py-1 rounded text-emerald-200 font-bold">[9정02-01]</span>
+            <h1 class="text-xl md:text-2xl font-bold chalk-text inline-block ml-2">중2 정보: 디지털 자료의 표현과 이진수</h1>
+        </div>
+        <div class="mt-2 sm:mt-0 flex items-center space-x-4 chalk-text text-lg">
+            <div>진행도: <span id="slide-progress" class="chalk-yellow">1</span> / 6</div>
+            <div id="game-score-zone" class="hidden bg-[#2d5a44] px-3 py-1 rounded-lg">
+                🏆 점수: <span id="global-score" class="chalk-yellow">0</span>점
+            </div>
+        </div>
+    </header>
+
+    <main class="w-full max-w-5xl mx-auto bg-[#162e23] rounded-2xl p-6 md:p-10 chalk-border shadow-2xl flex-grow flex flex-col justify-center">
+        
+        <div id="slide-1" class="slide-content space-y-6">
+            <div class="text-center space-y-4">
+                <h2 class="text-3xl md:text-5xl font-bold chalk-text chalk-yellow">📟 이진수 마스터 클래스</h2>
+                <p class="text-lg text-gray-300">컴퓨터는 세상을 어떻게 기억하고 표현할까?</p>
+            </div>
+            <div class="bg-[#1e3d2f] p-6 rounded-xl border border-emerald-800 space-y-3">
+                <h3 class="text-xl font-bold chalk-text">📌 오늘의 학습 목표</h3>
+                <ul class="list-disc list-inside space-y-2 text-md text-emerald-100">
+                    <li>실생활의 데이터가 <span class="chalk-yellow font-bold">디지털 형태(이진수)</span>로 표현되는 원리를 이해한다.</li>
+                    <li><span class="chalk-pink font-bold">십진수를 이진수</span>로, <span class="chalk-pink font-bold">이진수를 십진수</span>로 자유롭게 변환할 수 있다.</li>
+                    <li>게임을 통해 20개의 미션을 완수하고 이진수 마스터 배지를 획득한다.</li>
+                </ul>
+            </div>
+            <div class="text-center text-sm text-gray-400 pt-4">
+                [시각자료 안내: 컴퓨터 내부의 0과 1 신호 흐름도 배치 구역]
+            </div>
+        </div>
+
+        <div id="slide-2" class="slide-content hidden space-y-6">
+            <h2 class="text-2xl md:text-4xl font-bold chalk-text chalk-yellow">활동 1. 왜 컴퓨터는 이진수를 쓸까?</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-4 bg-[#1e3d2f] p-5 rounded-xl">
+                    <h3 class="text-xl font-bold chalk-text text-emerald-300">💡 십진수 (Decimal)</h3>
+                    <ul class="list-disc list-inside space-y-2 text-sm text-gray-200">
+                        <li>사람이 일상에서 사용하는 진법</li>
+                        <li><span class="chalk-yellow">0부터 9까지</span> 총 10개의 숫자를 사용</li>
+                        <li>자릿수가 올라갈 때마다 <span class="font-bold">10배씩</span> 커짐 (1, 10, 100, 1000...)</li>
+                    </ul>
+                </div>
+                <div class="space-y-4 bg-[#1e3d2f] p-5 rounded-xl">
+                    <h3 class="text-xl font-bold chalk-text text-emerald-300">💻 이진수 (Binary)</h3>
+                    <ul class="list-disc list-inside space-y-2 text-sm text-gray-200">
+                        <li>컴퓨터가 디지털 데이터를 표현하는 방식</li>
+                        <li><span class="chalk-pink font-bold">0과 1</span> 딱 두 개의 숫자만 사용</li>
+                        <li>전기 신호가 <span class="chalk-yellow">꺼짐(0)</span>과 <span class="chalk-yellow">켜짐(1)</span> 상태로 완벽 매칭</li>
+                        <li>자릿수가 올라갈 때마다 <span class="font-bold">2배씩</span> 커짐 (1, 2, 4, 8, 16...)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="p-4 bg-[#264d3d] rounded-lg text-center text-md">
+                📢 <span class="font-bold chalk-yellow">핵심:</span> 컴퓨터는 미세한 전압 변화의 오류를 줄이기 위해 가장 확실한 <span class="chalk-pink">두 가지 상태(0, 1)</span>만 채택했습니다!
+            </div>
+        </div>
+
+        <div id="slide-3" class="slide-content hidden space-y-4">
+            <h2 class="text-2xl md:text-4xl font-bold chalk-text chalk-yellow">활동 2. 십진수를 이진수로 바꾸는 마법</h2>
+            <p class="text-md text-gray-300">십진수를 더 이상 나눠지지 않을 때까지 <span class="chalk-pink font-bold">2로 계속 나누고</span>, 나머지를 거꾸로 읽어줍니다.</p>
+            
+            <div class="bg-[#1e3d2f] p-6 rounded-xl space-y-4">
+                <h3 class="text-lg font-bold chalk-text">📝 예제: 십진수 13을 이진수로 바꾸기</h3>
+                <div class="flex flex-col md:flex-row justify-around items-center space-y-4 md:space-y-0 text-center font-mono bg-[#162e23] p-4 rounded-lg">
+                    <div class="space-y-1">
+                        <p>2 ) <span class="chalk-yellow">13</span> ··· 나머지 <span class="chalk-pink">1</span> (우측 끝자리)</p>
+                        <p>2 ) <span class="chalk-yellow">6</span>  ··· 나머지 <span class="chalk-pink">0</span></p>
+                        <p>2 ) <span class="chalk-yellow">3</span>  ··· 나머지 <span class="chalk-pink">1</span></p>
+                        <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="chalk-yellow font-bold">1</span>  (가장 앞자리)</p>
+                    </div>
+                    <div class="text-3xl text-emerald-400">➔</div>
+                    <div>
+                        <p class="text-xs text-gray-400 mb-1">아래에서 위로 거꾸로 정렬</p>
+                        <p class="text-2xl font-bold chalk-text text-[#ffd56b]">1101<span class="text-xs text-gray-300">(2)</span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="text-sm text-center text-gray-400">
+                [시각자료 안내: 13을 2로 나누어 나눗셈 몫과 나머지가 남는 과정을 시각화한 수식 다이어그램 란]
+            </div>
+        </div>
+
+        <div id="slide-4" class="slide-content hidden space-y-4">
+            <h2 class="text-2xl md:text-4xl font-bold chalk-text chalk-yellow">활동 3. 이진수를 십진수로 복원하기</h2>
+            <p class="text-md text-gray-300">이진수의 각 자릿수는 <span class="chalk-pink font-bold">뒤에서부터 1, 2, 4, 8, 16...</span>의 고유 가중치(자리값)를 가집니다.</p>
+            
+            <div class="bg-[#1e3d2f] p-6 rounded-xl space-y-4">
+                <h3 class="text-lg font-bold chalk-text">📝 예제: 이진수 1010을 십진수로 바꾸기</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-center border-collapse border border-emerald-700 font-mono">
+                        <thead>
+                            <tr class="bg-[#244a39] text-gray-300">
+                                <th class="p-2 border border-emerald-700">자릿수 위치</th>
+                                <th class="p-2 border border-emerald-700">4번째 (8의 자리)</th>
+                                <th class="p-2 border border-emerald-700">3번째 (4의 자리)</th>
+                                <th class="p-2 border border-emerald-700">2번째 (2의 자리)</th>
+                                <th class="p-2 border border-emerald-700">1번째 (1의 자리)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="text-xl font-bold chalk-yellow">
+                                <td class="p-2 border border-emerald-700 text-sm font-sans text-white">이진수 값</td>
+                                <td class="p-2 border border-emerald-700">1</td>
+                                <td class="p-2 border border-emerald-700">0</td>
+                                <td class="p-2 border border-emerald-700">1</td>
+                                <td class="p-2 border border-emerald-700">0</td>
+                            </tr>
+                            <tr class="text-emerald-300 text-sm">
+                                <td class="p-2 border border-emerald-700 font-sans text-white">계산식</td>
+                                <td class="p-2 border border-emerald-700">8 × 1 = 8</td>
+                                <td class="p-2 border border-emerald-700">4 × 0 = 0</td>
+                                <td class="p-2 border border-emerald-700">2 × 1 = 2</td>
+                                <td class="p-2 border border-emerald-700">1 × 0 = 0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="p-3 bg-[#162e23] text-center rounded text-xl font-bold">
+                    합산 결과: <span class="chalk-pink">8 + 0 + 2 + 0 = 10</span> 입니다!
+                </div>
+            </div>
+        </div>
+
+        <div id="slide-5" class="slide-content hidden space-y-4">
+            <div class="text-center">
+                <h2 class="text-2xl md:text-3xl font-bold chalk-text chalk-yellow">🎮 실전 미션: 이진수 서바이벌 어드벤처</h2>
+                <p class="text-xs md:text-sm text-gray-300">총 4개 레벨, 20개의 미션을 풀고 최고의 디지털 마스터가 되어보세요!</p>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center text-xs bg-[#1e3d2f] p-3 rounded-xl font-bold">
+                <div class="bg-[#244a39] p-2 rounded">🎯 현재 레벨: <span id="game-level" class="text-yellow-300">1/4</span></div>
+                <div class="bg-[#244a39] p-2 rounded">⚡ 미션 코드: <span id="game-q-idx" class="text-yellow-300">1/5</span></div>
+                <div class="bg-[#244a39] p-2 rounded">❤️ 남은 기회: <span id="game-lives" class="text-red-400">⭐⭐⭐</span></div>
+                <div class="bg-[#244a39] p-2 rounded">🎖️ 획득 배지: <span id="game-badge" class="text-cyan-300">없음</span></div>
+            </div>
+
+            <div class="bg-[#13291f] p-6 rounded-xl border-2 border-dashed border-yellow-600/50 space-y-6 relative">
+                <div class="text-center space-y-2">
+                    <span id="level-badge" class="px-2 py-0.5 bg-yellow-700 text-xs rounded text-white font-mono font-bold">LEVEL 1: 4비트 십진수➔이진수</span>
+                    <h3 id="game-question-text" class="text-xl md:text-2xl font-bold chalk-text pt-2">Loading Question...</h3>
+                </div>
+
+                <div id="interactive-input-zone" class="flex flex-col items-center justify-center space-y-4">
+                    </div>
+
+                <div id="game-feedback" class="text-center text-lg font-bold min-h-[2rem]"></div>
+            </div>
+
+            <div class="flex justify-center">
+                <button id="btn-submit-answer" onclick="checkGameAnswer()" class="px-8 py-3 bg-[#c79133] hover:bg-[#b07f2a] text-white font-bold rounded-xl shadow-lg transition duration-200 text-lg w-full max-w-sm">
+                    정답 제출하기 ➔
+                </button>
+            </div>
+        </div>
+
+        <div id="slide-6" class="slide-content hidden space-y-6 text-center">
+            <h2 class="text-4xl font-bold chalk-text chalk-yellow">🎓 수업 종료 및 최종 평가 결과</h2>
+            <p class="text-lg text-emerald-200">오늘의 이진수 마스터 미션이 모두 완료되었습니다!</p>
+            
+            <div class="max-w-md mx-auto bg-[#1e3d2f] p-6 rounded-xl chalk-border space-y-4">
+                <div class="text-2xl font-bold">최종 점수: <span id="final-score" class="chalk-pink text-3xl">0</span> / 100점</div>
+                <div class="text-md">맞춘 문제 수: <span id="final-correct" class="chalk-yellow">0</span>개 / 20개</div>
+                
+                <hr class="border-emerald-800">
+                
+                <div class="space-y-2">
+                    <p class="text-sm text-gray-300 font-bold">🏆 최종 부여된 디지털 명예 배지</p>
+                    <div id="final-badge-graphic" class="text-4xl animate-bounce my-2">🔒</div>
+                    <p id="final-badge-text" class="text-xl font-bold text-cyan-300 font-mono">기록 없음</p>
+                </div>
+            </div>
+
+            <div class="p-4 bg-[#264d3d] max-w-2xl mx-auto rounded-lg text-left text-sm space-y-2">
+                <h4 class="font-bold chalk-yellow">📌 단원 핵심 정리 (요약 조각)</h4>
+                <p>1. 디지털 세상은 현실의 무수한 데이터를 정밀하게 수치화하여 <span class="font-bold">0과 1의 조합</span>으로 변환 보관합니다.</p>
+                <p>2. 이진수는 데이터 무결성을 보장하는 가장 원초적이고 강력한 <span class="font-bold">컴퓨터 표준 신호 체계</span>입니다.</p>
+            </div>
+            
+            <button onclick="resetGame()" class="px-4 py-2 bg-emerald-800 hover:bg-emerald-700 text-xs rounded transition">
+                처음부터 다시 도전하기
+            </button>
+        </div>
+
+    </main>
+
+    <footer class="w-full max-w-5xl mx-auto flex justify-between items-center mt-4">
+        <button id="btn-prev" onclick="moveSlide(-1)" class="px-4 py-2 bg-[#2d5a44] hover:bg-[#3d7a5c] disabled:opacity-40 rounded-lg text-sm font-bold transition">
+            ◀ 이전 슬라이드
+        </button>
+        <div class="hidden md:flex space-x-2">
+            <span class="inline-block w-2 h-2 rounded-full bg-yellow-400 slide-dot"></span>
+            <span class="inline-block w-2 h-2 rounded-full bg-gray-600 slide-dot"></span>
+            <span class="inline-block w-2 h-2 rounded-full bg-gray-600 slide-dot"></span>
+            <span class="inline-block w-2 h-2 rounded-full bg-gray-600 slide-dot"></span>
+            <span class="inline-block w-2 h-2 rounded-full bg-gray-600 slide-dot"></span>
+            <span class="inline-block w-2 h-2 rounded-full bg-gray-600 slide-dot"></span>
+        </div>
+        <button id="btn-next" onclick="moveSlide(1)" class="px-4 py-2 bg-[#2d5a44] hover:bg-[#3d7a5c] disabled:opacity-40 rounded-lg text-sm font-bold transition">
+            다음 슬라이드 ▶
+        </button>
+    </footer>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 6;
+
+        // 게임용 상태 변수
+        let gameScore = 0;
+        let currentQuestionIdx = 0; // 0 ~ 19 (총 20문제)
+        let gameLives = 3;
+        let selectedBits = [0, 0, 0, 0]; // 4비트 혹은 8비트 임시 배열 상태 저장용
+        
+        // 20개의 문제 데이터 셋 (정밀 구성: 레벨별 5문제씩 배치)
+        // type: 'dec2bin' (십진수를 이진수로 매칭), 'bin2dec' (이진수를 십진수로 풀기)
+        const questionBank = [
+            // Level 1: 4비트 Dec -> Bin (5문제)
+            { level: 1, type: 'dec2bin', q: 5, ans: '0101', bits: 4, desc: '십진수 5를 4비트 이진수로 표현하세요.' },
+            { level: 1, type: 'dec2bin', q: 9, ans: '1001', bits: 4, desc: '십진수 9를 4비트 이진수로 표현하세요.' },
+            { level: 1, type: 'dec2bin', q: 12, ans: '1100', bits: 4, desc: '십진수 12를 4비트 이진수로 표현하세요.' },
+            { level: 1, type: 'dec2bin', q: 3, ans: '0011', bits: 4, desc: '십진수 3를 4비트 이진수로 표현하세요.' },
+            { level: 1, type: 'dec2bin', q: 15, ans: '1111', bits: 4, desc: '십진수 15를 4비트 이진수로 표현하세요.' },
+
+            // Level 2: 4비트 Bin -> Dec (5문제)
+            { level: 2, type: 'bin2dec', q: '0110', ans: 6, bits: 4, desc: '이진수 0110은 십진수로 무엇일까요?' },
+            { level: 2, type: 'bin2dec', q: '1010', ans: 10, bits: 4, desc: '이진수 1010은 십진수로 무엇일까요?' },
+            { level: 2, type: 'bin2dec', q: '0111', ans: 7, bits: 4, desc: '이진수 0111은 십진수로 무엇일까요?' },
+            { level: 2, type: 'bin2dec', q: '1101', ans: 13, bits: 4, desc: '이진수 1101은 십진수로 무엇일까요?' },
+            { level: 2, type: 'bin2dec', q: '1000', ans: 8, bits: 4, desc: '이진수 1000은 십진수로 무엇일까요?' },
+
+            // Level 3: 8비트 Dec -> Bin (5문제)
+            { level: 3, type: 'dec2bin', q: 18, ans: '00010010', bits: 8, desc: '십진수 18을 8비트 이진수로 표현하세요.' },
+            { level: 3, type: 'dec2bin', q: 45, ans: '00101101', bits: 8, desc: '십진수 45를 8비트 이진수로 표현하세요.' },
+            { level: 3, type: 'dec2bin', q: 64, ans: '01000000', bits: 8, desc: '십진수 64를 8비트 이진수로 표현하세요.' },
+            { level: 3, type: 'dec2bin', q: 100, ans: '01100100', bits: 8, desc: '십진수 100을 8비트 이진수로 표현하세요.' },
+            { level: 3, type: 'dec2bin', q: 127, ans: '01111111', bits: 8, desc: '십진수 127을 8비트 이진수로 표현하세요.' },
+
+            // Level 4: 8비트 Bin -> Dec (5문제)
+            { level: 4, type: 'bin2dec', q: '00101010', ans: 42, bits: 8, desc: '이진수 00101010은 십진수로 무엇일까요?' },
+            { level: 4, type: 'bin2dec', q: '01010101', ans: 85, bits: 8, desc: '이진수 01010101은 십진수로 무엇일까요?' },
+            { level: 4, type: 'bin2dec', q: '00111100', ans: 60, bits: 8, desc: '이진수 00111100은 십진수로 무엇일까요?' },
+            { level: 4, type: 'bin2dec', q: '10000001', ans: 129, bits: 8, desc: '이진수 10000001은 십진수로 무엇일까요?' },
+            { level: 4, type: 'bin2dec', q: '11111111', ans: 255, bits: 8, desc: '이진수 11111111은 십진수로 무엇일까요?' }
+        ];
+
+        // 초기 시작 제어 일체
+        window.onload = function() {
+            updateSlideView();
+            initQuestion();
+        };
+
+        // 슬라이드 이동 함수
+        function moveSlide(direction) {
+            currentSlide += direction;
+            if (currentSlide < 1) currentSlide = 1;
+            if (currentSlide > totalSlides) currentSlide = totalSlides;
+            updateSlideView();
+        }
+
+        // 화면 뷰 갱신 처리
+        function updateSlideView() {
+            // 모든 슬라이드 숨김
+            for (let i = 1; i <= totalSlides; i++) {
+                const slide = document.getElementById(`slide-${i}`);
+                if (slide) slide.classList.add('hidden');
+            }
+            // 현재 슬라이드 노출
+            document.getElementById(`slide-${currentSlide}`).classList.remove('hidden');
+
+            // 헤더 정보 갱신
+            document.getElementById('slide-progress').innerText = currentSlide;
+            
+            if (currentSlide === 5 || currentSlide === 6) {
+                document.getElementById('game-score-zone').classList.remove('hidden');
+            } else {
+                document.getElementById('game-score-zone').classList.add('hidden');
+            }
+
+            // 하단 내비게이션 버튼 비활성화 상태 제어
+            document.getElementById('btn-prev').disabled = (currentSlide === 1);
+            document.getElementById('btn-next').disabled = (currentSlide === totalSlides);
+
+            // 도트 네비게이터 색상 변경
+            const dots = document.querySelectorAll('.slide-dot');
+            dots.forEach((dot, idx) => {
+                if (idx === currentSlide - 1) {
+                    dot.className = 'inline-block w-2 h-2 rounded-full bg-yellow-400 slide-dot';
+                } else {
+                    dot.className = 'inline-block w-2 h-2 rounded-full bg-gray-600 slide-dot';
+                }
+            });
+
+            // 최종결과 페이지 진입 시 스코어 보드 업데이트 반영
+            if (currentSlide === 6) {
+                calculateFinalReport();
+            }
+        }
+
+        // 게임 문제 초기화 로직
+        function initQuestion() {
+            if (currentQuestionIdx >= questionBank.length) {
+                // 20문제 전부 순회 돌파 완료 처리
+                moveSlide(1); // 결과 창으로 이동
+                return;
+            }
+
+            const currentQ = questionBank[currentQuestionIdx];
+            
+            // 헤더 가이드 상태창 업데이트
+            document.getElementById('game-level').innerText = `${currentQ.level} / 4`;
+            document.getElementById('game-q-idx').innerText = `${(currentQuestionIdx % 5) + 1} / 5 (전체 ${currentQuestionIdx + 1}/20)`;
+            document.getElementById('level-badge').innerText = `LEVEL ${currentQ.level} : ${currentQ.type === 'dec2bin' ? '십진수 ➔ 이진수' : '이진수 ➔ 십진수'}`;
+            document.getElementById('game-question-text').innerText = currentQ.desc;
+            document.getElementById('game-feedback').innerText = '';
+
+            const inputZone = document.getElementById('interactive-input-zone');
+            inputZone.innerHTML = ''; // 기존 구성 초기화
+
+            // 유형에 따른 입력 컨트롤 동적 주입 인터페이스
+            if (currentQ.type === 'dec2bin') {
+                // 비트 스위칭 토글 버튼형 UI 구성
+                selectedBits = Array(currentQ.bits).fill(0);
+                
+                const bitContainer = document.createElement('div');
+                bitContainer.className = "flex space-x-2 md:space-x-4 justify-center my-4";
+
+                for (let i = 0; i < currentQ.bits; i++) {
+                    // 가중치 값 계산 (역순 배치 8,4,2,1순)
+                    const weight = Math.pow(2, currentQ.bits - 1 - i);
+                    
+                    const singleBitBox = document.createElement('div');
+                    singleBitBox.className = "flex flex-col items-center";
+                    
+                    const weightLabel = document.createElement('span');
+                    weightLabel.className = "text-xs text-gray-400 mb-1 font-mono";
+                    weightLabel.innerText = `[${weight}의 자리]`;
+
+                    const btnBit = document.createElement('button');
+                    btnBit.id = `bit-btn-${i}`;
+                    btnBit.className = "w-12 h-16 md:w-16 md:h-20 bg-[#1e3d2f] border-2 border-[#d4cfb4] text-2xl md:text-3xl font-mono text-white font-bold rounded-xl transition shadow hover:bg-[#254d3b]";
+                    btnBit.innerText = "0";
+                    btnBit.onclick = () => toggleBitSystem(i);
+
+                    singleBitBox.appendChild(weightLabel);
+                    singleBitBox.appendChild(btnBit);
+                    bitContainer.appendChild(singleBitBox);
+                }
+                inputZone.appendChild(bitContainer);
+
+                const helperTip = document.createElement('p');
+                helperTip.className = "text-xs text-emerald-300";
+                helperTip.innerText = "💡 각 네모 상자를 누르면 0과 1이 토글(전환)됩니다! 자릿수 가중치를 합산해보세요.";
+                inputZone.appendChild(helperTip);
+
+            } else {
+                // 주관식 숫자 직접 타이핑 입력 UI 구성
+                const inputWrapper = document.createElement('div');
+                inputWrapper.className = "flex items-center space-x-3 my-4";
+
+                const numInput = document.createElement('input');
+                numInput.type = "number";
+                numInput.id = "numeric-decimal-answer";
+                numInput.placeholder = "답변 숫자 기입";
+                numInput.className = "p-3 rounded-xl text-black font-mono font-bold text-center text-xl w-48 focus:outline-none focus:ring-4 focus:ring-yellow-500";
+                
+                inputWrapper.appendChild(numInput);
+                inputZone.appendChild(inputWrapper);
+            }
+        }
+
+        // 비트 반전 토글러 서브루틴
+        function toggleBitSystem(index) {
+            selectedBits[index] = selectedBits[index] === 0 ? 1 : 0;
+            document.getElementById(`bit-btn-${index}`).innerText = selectedBits[index];
+            
+            // 가치 시각화 활성화 시 전구 켜지는 느낌 부여 효과
+            if (selectedBits[index] === 1) {
+                document.getElementById(`bit-btn-${index}`).classList.add('bg-yellow-600', 'text-yellow-100');
+            } else {
+                document.getElementById(`bit-btn-${index}`).classList.remove('bg-yellow-600', 'text-yellow-100');
+            }
+        }
+
+        // 정답 판단 유효성 메인 검사기
+        function checkGameAnswer() {
+            const currentQ = questionBank[currentQuestionIdx];
+            let isCorrect = false;
+            let studentAnsStr = "";
+
+            if (currentQ.type === 'dec2bin') {
+                studentAnsStr = selectedBits.join('');
+                if (studentAnsStr === currentQ.ans) {
+                    isCorrect = true;
+                }
+            } else {
+                const inputVal = document.getElementById('numeric-decimal-answer').value;
+                studentAnsStr = inputVal.trim();
+                if (parseInt(studentAnsStr) === currentQ.ans) {
+                    isCorrect = true;
+                }
+            }
+
+            const feedbackZone = document.getElementById('game-feedback');
+
+            if (isCorrect) {
+                gameScore += 5; // 문제당 5점 배정 (20문항 = 100점 만점)
+                document.getElementById('global-score').innerText = gameScore;
+                feedbackZone.innerHTML = "<span class='text-green-400'>⭕ 정답입니다! (+5점 획득)</span>";
+            } else {
+                gameLives--;
+                updateLivesGraphic();
+                feedbackZone.innerHTML = `<span class='text-red-400'>❌ 오답입니다! (정답: ${currentQ.ans})</span>`;
+            }
+
+            // 실시간 배지 업그레이드 중간 점검
+            evaluateBadgeStatus();
+
+            // 다음 문제로 넘어가기 전 딜레이 1.8초 제공
+            document.getElementById('btn-submit-answer').disabled = true;
+            setTimeout(() => {
+                currentQuestionIdx++;
+                document.getElementById('btn-submit-answer').disabled = false;
+                
+                if (gameLives <= 0) {
+                    alert("🚨 하트를 모두 소모하였습니다! 최종 리포트 슬라이드로 강제 이동합니다.");
+                    currentSlide = 6;
+                    updateSlideView();
+                } else {
+                    initQuestion();
+                }
+            }, 1800);
+        }
+
+        // 하트 잔여량 그래픽 매핑 함수
+        function updateLivesGraphic() {
+            let livesStr = "";
+            for (let i = 0; i < 3; i++) {
+                if (i < gameLives) livesStr += "⭐";
+                else livesStr += "🖤";
+            }
+            document.getElementById('game-lives').innerText = livesStr;
+        }
+
+        // 실시간 배지 스코어 매칭 연산
+        function evaluateBadgeStatus() {
+            let badgeName = "이진수 보초";
+            if (gameScore >= 80) badgeName = "🎖️ 디지털 마스터";
+            else if (gameScore >= 50) badgeName = "🥈 데이터 전사";
+            else if (gameScore >= 20) badgeName = "🥉 이진수 초보";
+
+            document.getElementById('game-badge').innerText = badgeName;
+            return badgeName;
+        }
+
+        // 최종 성적표 마감 데이터 로직 산출
+        function calculateFinalReport() {
+            document.getElementById('final-score').innerText = gameScore;
+            document.getElementById('final-correct').innerText = gameScore / 5;
+
+            const finalBadgeG = document.getElementById('final-badge-graphic');
+            const finalBadgeT = document.getElementById('final-badge-text');
+
+            if (gameScore >= 80) {
+                finalBadgeG.innerText = "👑";
+                finalBadgeT.innerText = "디지털 마스터 (영웅 고수 등급)";
+                finalBadgeT.className = "text-xl font-bold text-yellow-300 font-mono";
+            } else if (gameScore >= 50) {
+                finalBadgeG.innerText = "⚔️";
+                finalBadgeT.innerText = "데이터 전사 (우수 중수 등급)";
+                finalBadgeT.className = "text-xl font-bold text-cyan-300 font-mono";
+            } else if (gameScore >= 20) {
+                finalBadgeG.innerText = "🌱";
+                finalBadgeT.innerText = "이진수 초보 (발전단계 등급)";
+                finalBadgeT.className = "text-xl font-bold text-green-300 font-mono";
+            } else {
+                finalBadgeG.innerText = "🥚";
+                finalBadgeT.innerText = "기초 훈련 요망";
+                finalBadgeT.className = "text-xl font-bold text-red-300 font-mono";
+            }
+        }
+
+        // 게임 리셋 루틴 구현
+        function resetGame() {
+            gameScore = 0;
+            currentQuestionIdx = 0;
+            gameLives = 3;
+            document.getElementById('global-score').innerText = gameScore;
+            updateLivesGraphic();
+            currentSlide = 1;
+            updateSlideView();
+            initQuestion();
+        }
+    </script>
+</body>
+</html>
