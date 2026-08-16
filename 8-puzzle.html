@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[중2 정보] 8-Puzzle 추상화와 A* 알고리즘 실습</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Gaegu (칠판 손글씨) & Noto Sans KR -->
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #173326; /* 교실 칠판 고유 암록색 */
+            color: #f7f5e8; /* 분필 흰색 */
+        }
+        .chalk-font {
+            font-family: 'Gaegu', cursive;
+        }
+        .chalk-white { color: #f7f5e8; text-shadow: 1px 1px 2px rgba(0,0,0,0.6); }
+        .chalk-yellow { color: #fadb61; text-shadow: 1px 1px 2px rgba(0,0,0,0.6); }
+        .chalk-pink { color: #ff8b8b; text-shadow: 1px 1px 2px rgba(0,0,0,0.6); }
+        .chalk-green { color: #6ee7b7; text-shadow: 1px 1px 2px rgba(0,0,0,0.6); }
+        .chalk-cyan { color: #67e8f9; text-shadow: 1px 1px 2px rgba(0,0,0,0.6); }
+        
+        .chalk-border { border: 3px dashed #d1cca1; }
+        .chalk-box { background-color: #0e2219; border: 2px dashed #d1cca1; }
+        .chalk-card { background-color: #1a3a2b; border: 1px dashed #6b8e78; }
+
+        /* 타일 스타일 */
+        .puzzle-tile {
+            transition: all 0.15s ease-in-out;
+            box-shadow: 3px 3px 0px #08140e;
+        }
+        .puzzle-tile:hover:not(.tile-empty) {
+            transform: translateY(-2px);
+            background-color: #fadb61;
+            color: #173326;
+        }
+        .tile-empty {
+            background-color: rgba(14, 34, 25, 0.6);
+            border: 2px dashed #3a5c48;
+            box-shadow: none;
+        }
+
+        /* 커스텀 스크롤바 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0e2219;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3a5c48;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-3 md:p-6 select-none">
+
+    <!-- 상단 헤더 (성취기준 및 슬라이드 내비게이션) -->
+    <header class="w-full max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center border-b-2 border-dashed border-[#d1cca1] pb-3 mb-3">
+        <div class="text-center sm:text-left">
+            <span class="inline-block text-xs bg-[#254d38] text-[#6ee7b7] px-2 py-0.5 rounded font-bold mb-1">
+                [9정03-01~04] 중학교 2학년 정보 - 알고리즘과 프로그래밍
+            </span>
+            <h1 class="text-2xl md:text-3xl font-bold chalk-font chalk-yellow">
+                🧩 8-Puzzle 문제해결과 A* 알고리즘
+            </h1>
+        </div>
+        <div class="mt-2 sm:mt-0 flex items-center space-x-3 chalk-font text-lg">
+            <span class="bg-[#0e2219] px-3 py-1 rounded-lg border border-dashed border-[#d1cca1]">
+                활동 <span id="current-slide-num" class="chalk-yellow font-bold">1</span> / 3
+            </span>
+            <span id="global-status-badge" class="bg-[#0e2219] px-3 py-1 rounded-lg border border-dashed border-[#d1cca1] chalk-pink">
+                🎓 탐색 준비 완료
+            </span>
+        </div>
+    </header>
+
+    <!-- 메인 슬라이드 컨테이너 (총 3개 페이지/활동) -->
+    <main class="w-full max-w-6xl mx-auto bg-[#0e2219] p-4 md:p-6 rounded-2xl chalk-border shadow-2xl flex-grow flex flex-col justify-between min-h-[560px]">
+
+        <!-- ================= PAGE 1: [활동 1] 8-puzzle 문제 해결해보기 ================= -->
+        <section id="slide-1" class="slide-page space-y-4">
+            <div class="border-b border-gray-700 pb-2 flex justify-between items-end">
+                <div>
+                    <span class="text-xs chalk-green font-bold">[활동 1] 8-Puzzle 탐색 실습</span>
+                    <h2 class="text-2xl md:text-3xl font-bold chalk-font chalk-yellow">8-Puzzle 문제 직접 해결하기</h2>
+                </div>
+                <div class="text-xs font-mono bg-[#173326] px-3 py-1 rounded border border-gray-600">
+                    이동 횟수: <span id="p1-move-count" class="chalk-yellow font-bold text-base">0</span>회
+                </div>
+            </div>
+
+            <!-- 학습 목표 bullet points (3~5개) -->
+            <div class="bg-[#173326] p-3.5 rounded-xl border border-emerald-800 text-xs md:text-sm space-y-1">
+                <div class="font-bold chalk-pink chalk-font text-base">📌 핵심 개념 및 실습 안내</div>
+                <ul class="list-disc list-inside text-gray-200 space-y-1">
+                    <li>8-puzzle은 3×3 격자에 1~8의 숫자 타일과 1개의 빈 공간(0)으로 구성된 문제 상태 공간입니다. [9정03-01]</li>
+                    <li>빈 공간(0)과 인접한 상·하·좌·우 타일만 클릭하여 이동할 수 있습니다.</li>
+                    <li>시작 배치(<span class="chalk-yellow font-bold">초기 상태</span>)에서 완성된 배치(<span class="chalk-green font-bold">목표 상태</span>)로 가는 이동 규칙을 직접 체험해 보세요.</li>
+                    <li>최소한의 이동 횟수로 퍼즐을 맞추는 자신만의 알고리즘 규칙을 찾아보세요.</li>
+                </ul>
+            </div>
+
+            <!-- 시각자료 배치 안내 -->
+            <div class="bg-[#12281e] p-2 rounded border border-dashed border-gray-600 text-center text-xs text-gray-400 font-mono">
+                [시각자료: 3x3 격자판 내 타일의 이동 가능 위치 및 상태 전이(State Transition) 다이어그램]
+            </div>
+
+            <!-- 실습 인터페이스 -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                <!-- 좌측: 퍼즐 게임 보드 -->
+                <div class="md:col-span-7 flex flex-col items-center justify-center space-y-3">
+                    <div id="p1-board" class="grid grid-cols-3 gap-2 w-60 h-60 md:w-64 md:h-64 bg-[#173326] p-2.5 rounded-2xl chalk-border">
+                        <!-- JS로 9개 타일 동적 생성 -->
+                    </div>
+                </div>
+
+                <!-- 우측: 컨트롤 패널 및 목표 상태 -->
+                <div class="md:col-span-5 bg-[#173326] p-4 rounded-xl border border-gray-600 space-y-3">
+                    <div>
+                        <div class="text-xs text-gray-300 font-bold mb-1">🎯 완성해야 할 목표 상태 (Goal State)</div>
+                        <div class="grid grid-cols-3 gap-1 w-24 h-24 mx-auto bg-[#0e2219] p-1 rounded border border-yellow-500 text-xs font-mono font-bold text-center">
+                            <div class="bg-amber-800 flex items-center justify-center rounded">1</div>
+                            <div class="bg-amber-800 flex items-center justify-center rounded">2</div>
+                            <div class="bg-amber-800 flex items-center justify-center rounded">3</div>
+                            <div class="bg-amber-800 flex items-center justify-center rounded">4</div>
+                            <div class="bg-amber-800 flex items-center justify-center rounded">5</div>
+                            <div class="bg-amber-800 flex items-center justify-center rounded">6</div>
+                            <div class="bg-amber-800 flex items-center justify-center rounded">7</div>
+                            <div class="bg-amber-800 flex items-center justify-center rounded">8</div>
+                            <div class="bg-[#0e2219] text-gray-500 flex items-center justify-center rounded">0</div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 pt-2">
+                        <button onclick="p1Shuffle()" class="w-full py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg text-xs transition shadow chalk-font text-base">
+                            🔀 무작위 퍼즐 섞기 (New Game)
+                        </button>
+                        <button onclick="p1Reset()" class="w-full py-1.5 bg-zinc-700 hover:bg-zinc-600 text-gray-200 font-bold rounded-lg text-xs transition border border-gray-600">
+                            🧹 목표 상태로 초기화 (Reset)
+                        </button>
+                    </div>
+
+                    <div id="p1-status" class="text-xs font-bold text-center min-h-[1.5rem] chalk-green pt-1">
+                        타일을 클릭하여 빈 칸(0)으로 이동시키세요!
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= PAGE 2: [활동 2] 8-puzzle 힌트 제공 시스템 ================= -->
+        <section id="slide-2" class="slide-page hidden space-y-4">
+            <div class="border-b border-gray-700 pb-2 flex justify-between items-end">
+                <div>
+                    <span class="text-xs chalk-green font-bold">[활동 2] 휴리스틱 추상화 실습</span>
+                    <h2 class="text-2xl md:text-3xl font-bold chalk-font chalk-yellow">휴리스틱 힌트 기반 퍼즐 분석기</h2>
+                </div>
+                <div class="text-xs font-mono bg-[#173326] px-3 py-1 rounded border border-gray-600">
+                    이동 횟수: <span id="p2-move-count" class="chalk-yellow font-bold text-base">0</span>회
+                </div>
+            </div>
+
+            <!-- 학습 목표 bullet points -->
+            <div class="bg-[#173326] p-3.5 rounded-xl border border-emerald-800 text-xs md:text-sm space-y-1">
+                <div class="font-bold chalk-pink chalk-font text-base">📌 핵심 개념 및 실습 안내</div>
+                <ul class="list-disc list-inside text-gray-200 space-y-1">
+                    <li>[9정03-02] 복잡한 퍼즐의 상태를 수치화하기 위해 **휴리스틱(Heuristic, $h(n)$)** 추상화를 적용합니다.</li>
+                    <li><span class="chalk-yellow font-bold">맞는 위치의 타일 수</span>: 전체 8개 타일 중 현재 목표 위치에 바르게 놓인 타일의 개수입니다.</li>
+                    <li><span class="chalk-pink font-bold">맨해튼 거리(Manhattan Distance)</span>: 각 타일이 자신의 목표 위치까지 이동해야 하는 $가로 + 세로$ 칸 수의 총합입니다.</li>
+                    <li>수치가 작을수록 목표 상태에 더 가깝다는 정보를 활용하여 다음 최적의 이동 방향을 판단하세요.</li>
+                </ul>
+            </div>
+
+            <!-- 시각자료 배치 안내 -->
+            <div class="bg-[#12281e] p-2 rounded border border-dashed border-gray-600 text-center text-xs text-gray-400 font-mono">
+                [시각자료: 타일별 목표 좌표와의 맨해튼 거리 $|x_1 - x_2| + |y_1 - y_2|$ 계산 원리 시각화]
+            </div>
+
+            <!-- 요구사항 반영: 왼쪽 8-puzzle 문제 / 오른쪽 힌트 제공 (맞는 위치 타일 수, 맨해튼 거리) -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                <!-- 왼쪽: 8-puzzle 문제 플레이 공간 -->
+                <div class="md:col-span-6 flex flex-col items-center justify-center space-y-2">
+                    <div class="text-xs chalk-cyan font-bold">🎮 [왼쪽] 실무 8-Puzzle 게임판</div>
+                    <div id="p2-board" class="grid grid-cols-3 gap-2 w-56 h-56 md:w-60 md:h-60 bg-[#173326] p-2.5 rounded-2xl chalk-border">
+                        <!-- JS 생성 -->
+                    </div>
+                    <div class="flex space-x-2 pt-1">
+                        <button onclick="p2Shuffle()" class="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded text-xs">🔀 퍼즐 섞기</button>
+                        <button onclick="p2Reset()" class="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-gray-200 font-bold rounded text-xs">🧹 초기화</button>
+                    </div>
+                </div>
+
+                <!-- 오른쪽: 맞는 위치에 있는 퍼즐 개수 + 맨해튼 거리 힌트 패널 -->
+                <div class="md:col-span-6 bg-[#173326] p-4 rounded-xl border border-emerald-600 space-y-3">
+                    <div class="text-xs chalk-green font-bold border-b border-gray-700 pb-1">💡 [오른쪽] 실시간 휴리스틱 힌트 모니터</div>
+
+                    <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+                        <!-- 힌트 1: 맞는 위치 타일 개수 -->
+                        <div class="bg-[#0e2219] p-3 rounded-lg border border-gray-600 text-center space-y-1">
+                            <div class="text-gray-300 text-[11px]">맞는 위치의 타일 수</div>
+                            <div id="hint-correct-count" class="text-2xl chalk-yellow font-bold">0 / 8개</div>
+                            <div class="text-[10px] text-gray-400">(높을수록 정답에 가까움)</div>
+                        </div>
+
+                        <!-- 힌트 2: 맨해튼 거리 -->
+                        <div class="bg-[#0e2219] p-3 rounded-lg border border-gray-600 text-center space-y-1">
+                            <div class="text-gray-300 text-[11px]">총 맨해튼 거리 $h(n)$</div>
+                            <div id="hint-manhattan-dist" class="text-2xl chalk-pink font-bold">0</div>
+                            <div class="text-[10px] text-gray-400">(0이 되면 퍼즐 완성!)</div>
+                        </div>
+                    </div>
+
+                    <!-- AI 최적 방향 추천 힌트 -->
+                    <div class="bg-[#0e2219] p-3 rounded-lg border border-dashed border-yellow-500/70 space-y-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="chalk-yellow font-bold">⚡ 알고리즘 추천 최적 이동:</span>
+                            <span id="hint-recommend-action" class="chalk-green font-bold text-sm">대기 중</span>
+                        </div>
+                        <p class="text-[11px] text-gray-300">
+                            이동 가능한 타일 중 맨해튼 거리 $h(n)$를 가장 많이 줄여주는 방향의 타일을 추천합니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= PAGE 3: [활동 3] A* 알고리즘 그래프 표현 실습 ================= -->
+        <section id="slide-3" class="slide-page hidden space-y-3">
+            <div class="border-b border-gray-700 pb-2 flex justify-between items-end">
+                <div>
+                    <span class="text-xs chalk-green font-bold">[활동 3] A* 탐색 그래프 실습</span>
+                    <h2 class="text-2xl md:text-3xl font-bold chalk-font chalk-yellow">A* 알고리즘 상태 그래프 트리 표현</h2>
+                </div>
+                <div class="text-xs font-mono bg-[#173326] px-3 py-1 rounded border border-gray-600">
+                    탐색 노드 수: <span id="p3-node-count" class="chalk-yellow font-bold text-base">1</span>개
+                </div>
+            </div>
+
+            <!-- 학습 목표 bullet points -->
+            <div class="bg-[#173326] p-3 rounded-xl border border-emerald-800 text-xs md:text-sm space-y-1">
+                <div class="font-bold chalk-pink chalk-font text-base">📌 핵심 개념 및 실습 안내</div>
+                <ul class="list-disc list-inside text-gray-200 space-y-0.5">
+                    <li>[9정03-03, 04] A* 알고리즘은 총 평가 비용 <span class="chalk-yellow font-bold">$f(n) = g(n) + h(n)$</span>이 가장 작은 상태 노드를 우선 탐색합니다.</li>
+                    <li><span class="chalk-cyan font-bold">$g(n)$</span>: 시작 노드부터 현재 노드까지의 실제 이동 횟수(트리 깊이)</li>
+                    <li><span class="chalk-pink font-bold">$h(n)$</span>: 현재 상태에서 목표 상태까지의 예상 잔여 거리(맨해튼 거리)</li>
+                    <li><span class="chalk-yellow font-bold">초기 상태 섞기</span> 기능으로 새로운 난이도의 퍼즐 상태를 트리로 탐색해 보세요.</li>
+                </ul>
+            </div>
+
+            <!-- 시각자료 배치 안내 -->
+            <div class="bg-[#12281e] p-1.5 rounded border border-dashed border-gray-600 text-center text-xs text-gray-400 font-mono">
+                [시각자료: 상태 공간 트리의 $f(n) = g(n) + h(n)$ 노드 확장 및 우선순위 큐 작동 그래프]
+            </div>
+
+            <!-- A* 트리 탐색 시뮬레이터 -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+                <!-- 제어 콘솔 -->
+                <div class="md:col-span-4 bg-[#173326] p-3 rounded-xl border border-gray-600 space-y-2 text-xs">
+                    <div class="font-bold chalk-yellow chalk-font text-base">⚙️ A* 탐색 컨트롤러</div>
+                    
+                    <div class="space-y-1.5">
+                        <button onclick="p3ShuffleStartNode()" class="w-full py-1.5 bg-indigo-700 hover:bg-indigo-600 text-white font-bold rounded shadow transition flex items-center justify-center space-x-1">
+                            <span>🔀</span><span>초기 상태 섞기 (새 문제)</span>
+                        </button>
+                        <button onclick="p3StepExpand()" id="btn-p3-step" class="w-full py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded shadow transition">
+                            ▶ 다음 탐색 단계 (Min $f(n)$ 노드 확장)
+                        </button>
+                        <button onclick="p3AutoSolve()" id="btn-p3-auto" class="w-full py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded transition">
+                            ⚡ 자동 탐색 실행 (Auto-Solve)
+                        </button>
+                        <button onclick="p3ResetTree()" class="w-full py-1.5 bg-zinc-700 hover:bg-zinc-600 text-gray-200 font-bold rounded border border-gray-600">
+                            🔄 트리 그래프 초기화
+                        </button>
+                    </div>
+
+                    <div id="p3-log-box" class="bg-[#0e2219] p-2 rounded border border-gray-700 h-28 overflow-y-auto font-mono text-[11px] space-y-1 text-gray-300">
+                        <div class="text-emerald-400 font-bold">> A* 트리 시뮬레이터 준비 완료.</div>
+                        <div>> 초기 상태: g=0, h=3, f=3</div>
+                    </div>
+                </div>
+
+                <!-- 트리 그래프 시각화 구역 -->
+                <div class="md:col-span-8 bg-[#173326] p-3 rounded-xl border border-gray-600 min-h-[220px] max-h-[280px] overflow-x-auto overflow-y-auto space-y-2">
+                    <div class="flex justify-between items-center border-b border-gray-700 pb-1 text-xs">
+                        <span class="chalk-green font-bold">🌳 생성된 상태 공간 그래프 노드 목록</span>
+                        <span class="text-[10px] text-gray-400">* <span class="chalk-yellow">노란 테두리</span>: 현재 최소 $f(n)$ 선택 노드</span>
+                    </div>
+
+                    <!-- 동적 생성될 트리 노드 컨테이너 -->
+                    <div id="p3-tree-container" class="flex flex-wrap gap-2 items-start justify-start p-1">
+                        <!-- JS Dynamic Node Cards -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 하단 내비게이션 바 -->
+    <footer class="w-full max-w-6xl mx-auto flex justify-between items-center mt-3">
+        <button id="btn-prev" onclick="changeSlide(-1)" class="px-4 py-2 bg-[#254d38] hover:bg-[#34664c] disabled:opacity-40 rounded-lg text-xs md:text-sm font-bold transition">
+            ◀ 이전 활동
+        </button>
+
+        <!-- 도트 네비게이터 -->
+        <div id="slide-dots-container" class="flex space-x-2">
+            <!-- JS 동적 생성 -->
+        </div>
+
+        <button id="btn-next" onclick="changeSlide(1)" class="px-4 py-2 bg-[#254d38] hover:bg-[#34664c] disabled:opacity-40 rounded-lg text-xs md:text-sm font-bold transition">
+            다음 활동 ▶
+        </button>
+    </footer>
+
+    <!-- 자바스크립트 로직 (전체 인터랙션 통합) -->
+    <script>
+        // ================= 슬라이드 제어 =================
+        let currentSlide = 1;
+        const totalSlides = 3;
+
+        window.onload = function() {
+            createSlideDots();
+            showSlide(1);
+            p1Init();
+            p2Init();
+            p3Init();
+        };
+
+        function createSlideDots() {
+            const container = document.getElementById('slide-dots-container');
+            container.innerHTML = '';
+            for (let i = 1; i <= totalSlides; i++) {
+                const dot = document.createElement('button');
+                dot.onclick = () => goToSlide(i);
+                dot.className = `w-3 h-3 rounded-full transition ${i === 1 ? 'bg-yellow-400' : 'bg-gray-600'}`;
+                dot.id = `dot-${i}`;
+                container.appendChild(dot);
+            }
+        }
+
+        function showSlide(slideNum) {
+            for (let i = 1; i <= totalSlides; i++) {
+                const page = document.getElementById(`slide-${i}`);
+                if (page) page.classList.add('hidden');
+                const dot = document.getElementById(`dot-${i}`);
+                if (dot) dot.className = `w-3 h-3 rounded-full transition ${i === slideNum ? 'bg-yellow-400 font-bold' : 'bg-gray-600'}`;
+            }
+
+            document.getElementById(`slide-${slideNum}`).classList.remove('hidden');
+            document.getElementById('current-slide-num').innerText = slideNum;
+            currentSlide = slideNum;
+
+            document.getElementById('btn-prev').disabled = (slideNum === 1);
+            document.getElementById('btn-next').disabled = (slideNum === totalSlides);
+
+            const badge = document.getElementById('global-status-badge');
+            if (slideNum === 1) badge.innerText = "🎮 활동 1: 퍼즐 직접 탐색";
+            else if (slideNum === 2) badge.innerText = "💡 활동 2: 휴리스틱 분석";
+            else if (slideNum === 3) badge.innerText = "🌳 활동 3: A* 트리 그래프";
+        }
+
+        function changeSlide(dir) {
+            let target = currentSlide + dir;
+            if (target >= 1 && target <= totalSlides) showSlide(target);
+        }
+
+        function goToSlide(num) {
+            if (num >= 1 && num <= totalSlides) showSlide(num);
+        }
+
+
+        // ================= 공통 8-PUZZLE 로직 =================
+        const GOAL_STATE = [1, 2, 3, 4, 5, 6, 7, 8, 0];
+
+        function isAdjacent(idx1, idx2) {
+            const r1 = Math.floor(idx1 / 3), c1 = idx1 % 3;
+            const r2 = Math.floor(idx2 / 3), c2 = idx2 % 3;
+            return (Math.abs(r1 - r2) + Math.abs(c1 - c2)) === 1;
+        }
+
+        function countCorrectTiles(state) {
+            let count = 0;
+            for (let i = 0; i < 9; i++) {
+                if (state[i] !== 0 && state[i] === GOAL_STATE[i]) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        function getManhattanDistance(state) {
+            let dist = 0;
+            for (let i = 0; i < 9; i++) {
+                const val = state[i];
+                if (val !== 0) {
+                    const currentR = Math.floor(i / 3), currentC = i % 3;
+                    const targetIdx = val - 1;
+                    const targetR = Math.floor(targetIdx / 3), targetC = targetIdx % 3;
+                    dist += Math.abs(currentR - targetR) + Math.abs(currentC - targetC);
+                }
+            }
+            return dist;
+        }
+
+        function getValidNeighbors(idx) {
+            const r = Math.floor(idx / 3), c = idx % 3;
+            const neighbors = [];
+            if (r > 0) neighbors.push(idx - 3); // UP
+            if (r < 2) neighbors.push(idx + 3); // DOWN
+            if (c > 0) neighbors.push(idx - 1); // LEFT
+            if (c < 2) neighbors.push(idx + 1); // RIGHT
+            return neighbors;
+        }
+
+
+        // ================= 페이지 1 로직 =================
+        let p1State = [1, 2, 3, 4, 5, 6, 7, 8, 0];
+        let p1Moves = 0;
+
+        function p1Init() {
+            p1RenderBoard();
+        }
+
+        function p1RenderBoard() {
+            const board = document.getElementById('p1-board');
+            board.innerHTML = '';
+            p1State.forEach((val, idx) => {
+                const tile = document.createElement('div');
+                tile.className = `puzzle-tile flex items-center justify-center text-xl font-bold font-mono rounded-xl cursor-pointer ${val === 0 ? 'tile-empty' : 'bg-amber-800 text-yellow-100 border border-amber-600'}`;
+                tile.innerText = val === 0 ? '' : val;
+                tile.onclick = () => p1TileClick(idx);
+                board.appendChild(tile);
+            });
+            document.getElementById('p1-move-count').innerText = p1Moves;
+        }
+
+        function p1TileClick(idx) {
+            const emptyIdx = p1State.indexOf(0);
+            if (isAdjacent(idx, emptyIdx)) {
+                p1State[emptyIdx] = p1State[idx];
+                p1State[idx] = 0;
+                p1Moves++;
+                p1RenderBoard();
+                p1CheckWin();
+            }
+        }
+
+        function p1Shuffle() {
+            p1State = [1, 2, 3, 4, 5, 6, 7, 8, 0];
+            let steps = 18;
+            let lastEmpty = -1;
+            for (let i = 0; i < steps; i++) {
+                const emptyIdx = p1State.indexOf(0);
+                const nbrs = getValidNeighbors(emptyIdx).filter(n => n !== lastEmpty);
+                const nextIdx = nbrs[Math.floor(Math.random() * nbrs.length)] || getValidNeighbors(emptyIdx)[0];
+                lastEmpty = emptyIdx;
+                p1State[emptyIdx] = p1State[nextIdx];
+                p1State[nextIdx] = 0;
+            }
+            p1Moves = 0;
+            document.getElementById('p1-status').className = "text-xs font-bold text-center chalk-yellow";
+            document.getElementById('p1-status').innerText = "퍼즐이 무작위로 섞였습니다. 목표 상태를 만들어 보세요!";
+            p1RenderBoard();
+        }
+
+        function p1Reset() {
+            p1State = [1, 2, 3, 4, 5, 6, 7, 8, 0];
+            p1Moves = 0;
+            document.getElementById('p1-status').className = "text-xs font-bold text-center chalk-green";
+            document.getElementById('p1-status').innerText = "목표 상태로 초기화되었습니다.";
+            p1RenderBoard();
+        }
+
+        function p1CheckWin() {
+            const win = p1State.every((val, i) => val === GOAL_STATE[i]);
+            if (win && p1Moves > 0) {
+                document.getElementById('p1-status').className = "text-xs font-bold text-center chalk-yellow animate-bounce";
+                document.getElementById('p1-status').innerText = "🎉 축하합니다! 퍼즐을 완벽히 해결했습니다!";
+            }
+        }
+
+
+        // ================= 페이지 2 로직 (힌트 패널 반영) =================
+        let p2State = [1, 2, 3, 4, 0, 6, 7, 5, 8]; // 초기 힌트용 상태
+        let p2Moves = 0;
+
+        function p2Init() {
+            p2RenderBoard();
+            p2UpdateHints();
+        }
+
+        function p2RenderBoard() {
+            const board = document.getElementById('p2-board');
+            board.innerHTML = '';
+            p2State.forEach((val, idx) => {
+                const tile = document.createElement('div');
+                tile.className = `puzzle-tile flex items-center justify-center text-lg font-bold font-mono rounded-lg cursor-pointer ${val === 0 ? 'tile-empty' : 'bg-amber-800 text-yellow-100 border border-amber-600'}`;
+                tile.innerText = val === 0 ? '' : val;
+                tile.onclick = () => p2TileClick(idx);
+                board.appendChild(tile);
+            });
+            document.getElementById('p2-move-count').innerText = p2Moves;
+            p2UpdateHints();
+        }
+
+        function p2TileClick(idx) {
+            const emptyIdx = p2State.indexOf(0);
+            if (isAdjacent(idx, emptyIdx)) {
+                p2State[emptyIdx] = p2State[idx];
+                p2State[idx] = 0;
+                p2Moves++;
+                p2RenderBoard();
+            }
+        }
+
+        function p2UpdateHints() {
+            const correctCount = countCorrectTiles(p2State);
+            const manhattan = getManhattanDistance(p2State);
+
+            document.getElementById('hint-correct-count').innerText = `${correctCount} / 8개`;
+            document.getElementById('hint-manhattan-dist').innerText = manhattan;
+
+            // AI 최적 방향 추천
+            const emptyIdx = p2State.indexOf(0);
+            const nbrs = getValidNeighbors(emptyIdx);
+            let bestTile = -1;
+            let minH = 999;
+
+            nbrs.forEach(nIdx => {
+                let tempState = [...p2State];
+                tempState[emptyIdx] = tempState[nIdx];
+                tempState[nIdx] = 0;
+                let h = getManhattanDistance(tempState);
+                if (h < minH) {
+                    minH = h;
+                    bestTile = p2State[nIdx];
+                }
+            });
+
+            const actionEl = document.getElementById('hint-recommend-action');
+            if (manhattan === 0) {
+                actionEl.innerText = "🎯 목표 완수!";
+                actionEl.className = "chalk-yellow font-bold text-sm";
+            } else if (bestTile !== -1) {
+                actionEl.innerText = `[${bestTile}번 타일] 클릭 추천 (예상 h=${minH})`;
+                actionEl.className = "chalk-green font-bold text-sm";
+            }
+        }
+
+        function p2Shuffle() {
+            p2State = [1, 2, 3, 4, 5, 6, 7, 8, 0];
+            let steps = 14;
+            let lastEmpty = -1;
+            for (let i = 0; i < steps; i++) {
+                const emptyIdx = p2State.indexOf(0);
+                const nbrs = getValidNeighbors(emptyIdx).filter(n => n !== lastEmpty);
+                const nextIdx = nbrs[Math.floor(Math.random() * nbrs.length)] || getValidNeighbors(emptyIdx)[0];
+                lastEmpty = emptyIdx;
+                p2State[emptyIdx] = p2State[nextIdx];
+                p2State[nextIdx] = 0;
+            }
+            p2Moves = 0;
+            p2RenderBoard();
+        }
+
+        function p2Reset() {
+            p2State = [1, 2, 3, 4, 0, 6, 7, 5, 8];
+            p2Moves = 0;
+            p2RenderBoard();
+        }
+
+
+        // ================= 페이지 3 로직 (A* 트리 시뮬레이터) =================
+        let p3TreeNodes = [];
+        let p3OpenList = [];
+        let p3ClosedList = new Set();
+        let p3AutoTimer = null;
+        let p3InitialPuzzle = [1, 2, 3, 4, 0, 6, 7, 5, 8]; // 초기 노드 상태 관리
+
+        function p3Init() {
+            p3ResetTree();
+        }
+
+        // 페이지 3: 초기 상태 무작위 섞기 기능
+        function p3ShuffleStartNode() {
+            if (p3AutoTimer) clearInterval(p3AutoTimer);
+            p3AutoTimer = null;
+
+            // 실습에 적합한 난이도(이동 3~6단계)로 무작위 상태 생성
+            let state = [1, 2, 3, 4, 5, 6, 7, 8, 0];
+            let steps = 3 + Math.floor(Math.random() * 4); // 3~6 steps
+            let lastEmpty = -1;
+
+            for (let i = 0; i < steps; i++) {
+                const emptyIdx = state.indexOf(0);
+                const nbrs = getValidNeighbors(emptyIdx).filter(n => n !== lastEmpty);
+                const nextIdx = nbrs[Math.floor(Math.random() * nbrs.length)] || getValidNeighbors(emptyIdx)[0];
+                lastEmpty = emptyIdx;
+                state[emptyIdx] = state[nextIdx];
+                state[nextIdx] = 0;
+            }
+
+            p3InitialPuzzle = state;
+            p3ResetTree();
+
+            p3Log(`> 🔀 초기 상태가 무작위로 변경되었습니다. (h=${getManhattanDistance(p3InitialPuzzle)})`);
+        }
+
+        function p3ResetTree() {
+            if (p3AutoTimer) clearInterval(p3AutoTimer);
+            p3AutoTimer = null;
+
+            const startNode = {
+                id: 1,
+                parentId: null,
+                state: [...p3InitialPuzzle],
+                g: 0,
+                h: getManhattanDistance(p3InitialPuzzle),
+                f: getManhattanDistance(p3InitialPuzzle),
+                status: 'open' // open, expanded, goal
+            };
+
+            p3TreeNodes = [startNode];
+            p3OpenList = [startNode];
+            p3ClosedList = new Set();
+
+            document.getElementById('p3-log-box').innerHTML = `
+                <div class="text-emerald-400 font-bold">> A* 트리 시뮬레이터 준비 완료.</div>
+                <div>> 루트 노드 생성: g=0, h=${startNode.h}, f=${startNode.f}</div>
+            `;
+
+            p3RenderTree();
+        }
+
+        function p3StepExpand() {
+            if (p3OpenList.length === 0) {
+                p3Log("> 탐색 가능 노드가 없습니다.");
+                return;
+            }
+
+            // min f(n) 선택
+            p3OpenList.sort((a, b) => a.f - b.f);
+            const currentNode = p3OpenList.shift();
+            currentNode.status = 'expanded';
+
+            const stateKey = currentNode.state.join(',');
+            p3ClosedList.add(stateKey);
+
+            p3Log(`> 노드 #${currentNode.id} 선택 (f=${currentNode.f} = g:${currentNode.g} + h:${currentNode.h})`);
+
+            // 목표 상태 확인
+            if (currentNode.h === 0) {
+                currentNode.status = 'goal';
+                p3Log(`🎉 목표 노드 도달! 최적 경로 탐색 성공!`);
+                if (p3AutoTimer) clearInterval(p3AutoTimer);
+                p3RenderTree();
+                return;
+            }
+
+            // 자식 노드 생성
+            const emptyIdx = currentNode.state.indexOf(0);
+            const nbrs = getValidNeighbors(emptyIdx);
+
+            nbrs.forEach(nIdx => {
+                let nextState = [...currentNode.state];
+                nextState[emptyIdx] = nextState[nIdx];
+                nextState[nIdx] = 0;
+
+                const key = nextState.join(',');
+                if (!p3ClosedList.has(key)) {
+                    const g = currentNode.g + 1;
+                    const h = getManhattanDistance(nextState);
+                    const childNode = {
+                        id: p3TreeNodes.length + 1,
+                        parentId: currentNode.id,
+                        state: nextState,
+                        g: g,
+                        h: h,
+                        f: g + h,
+                        status: 'open'
+                    };
+                    p3TreeNodes.push(childNode);
+                    p3OpenList.push(childNode);
+                }
+            });
+
+            p3RenderTree();
+        }
+
+        function p3AutoSolve() {
+            if (p3AutoTimer) return;
+            p3AutoTimer = setInterval(() => {
+                const goalFound = p3TreeNodes.some(n => n.status === 'goal');
+                if (goalFound || p3OpenList.length === 0) {
+                    clearInterval(p3AutoTimer);
+                    p3AutoTimer = null;
+                } else {
+                    p3StepExpand();
+                }
+            }, 600);
+        }
+
+        function p3RenderTree() {
+            const container = document.getElementById('p3-tree-container');
+            container.innerHTML = '';
+
+            document.getElementById('p3-node-count').innerText = p3TreeNodes.length;
+
+            p3TreeNodes.forEach(node => {
+                const card = document.createElement('div');
+                let borderStyle = "border-gray-600 bg-[#0e2219]";
+                if (node.status === 'expanded') borderStyle = "border-gray-500 opacity-75 bg-[#12281e]";
+                if (node.status === 'open') borderStyle = "border-yellow-400 bg-[#173326] shadow-lg";
+                if (node.status === 'goal') borderStyle = "border-emerald-400 bg-emerald-950 font-bold";
+
+                card.className = `p-2 rounded-lg border text-[11px] font-mono flex flex-col items-center space-y-1 w-28 ${borderStyle}`;
+
+                // 미니 퍼즐 그리드 표현
+                let gridHtml = `<div class="grid grid-cols-3 gap-0.5 w-14 h-14 bg-[#0e2219] p-0.5 border border-gray-700">`;
+                node.state.forEach(v => {
+                    gridHtml += `<div class="flex items-center justify-center text-[9px] font-bold ${v===0?'text-gray-600':'bg-amber-800 text-yellow-100'}">${v===0?'':v}</div>`;
+                });
+                gridHtml += `</div>`;
+
+                card.innerHTML = `
+                    <div class="flex justify-between w-full text-[10px] text-gray-300">
+                        <span>#${node.id}</span>
+                        <span class="chalk-yellow">f:${node.f}</span>
+                    </div>
+                    ${gridHtml}
+                    <div class="text-[9px] text-gray-300">g:${node.g} + h:${node.h}</div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function p3Log(msg) {
+            const logBox = document.getElementById('p3-log-box');
+            const item = document.createElement('div');
+            item.innerText = msg;
+            logBox.appendChild(item);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
