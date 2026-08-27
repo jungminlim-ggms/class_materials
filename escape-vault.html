@@ -338,6 +338,17 @@
             width: 100%;
         }
 
+        .solo-option {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px dashed #6b8e78;
+        }
+
+        .solo-option .field-help {
+            margin: 7px 0 0;
+            text-align: center;
+        }
+
         .setup-actions,
         .finish-actions {
             display: flex;
@@ -821,6 +832,10 @@
                             <p id="secretHelp" class="field-help">1~3자리 숫자를 입력하세요. 예: 7은 007로 처리됩니다.</p>
                             <p id="secretError" class="field-error" role="alert" aria-live="polite"></p>
                             <button class="btn btn-primary btn-wide" type="submit">🔐 금고 잠그기</button>
+                            <div class="solo-option">
+                                <button id="randomSecret" class="btn btn-secondary btn-wide" type="button">🎲 혼자 하기: 랜덤 번호로 잠그기</button>
+                                <p class="field-help">컴퓨터가 번호를 정하며, 정답은 화면에 표시되지 않습니다.</p>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -830,7 +845,7 @@
                 <div class="handoff-icon" aria-hidden="true">🙈 ➜ 🕵️</div>
                 <span class="eyebrow">STEP 2 · 화면 넘기기</span>
                 <h2 id="handoffTitle" class="chalk-font">금고가 잠겼습니다!</h2>
-                <p class="handoff-copy">출제자는 추측자에게 화면을 넘겨주세요. 비밀 번호 입력칸은 이미 비워졌습니다. 추측자가 준비되면 아래 버튼을 누릅니다.</p>
+                <p id="handoffCopy" class="handoff-copy">출제자는 추측자에게 화면을 넘겨주세요. 비밀 번호 입력칸은 이미 비워졌습니다. 추측자가 준비되면 아래 버튼을 누릅니다.</p>
                 <button id="beginGuessing" class="btn btn-primary" type="button">🕵️ 추측 시작하기</button>
             </section>
 
@@ -1008,6 +1023,9 @@
                 secretCode: document.getElementById('secretCode'),
                 secretError: document.getElementById('secretError'),
                 toggleSecret: document.getElementById('toggleSecret'),
+                randomSecret: document.getElementById('randomSecret'),
+                handoffTitle: document.getElementById('handoffTitle'),
+                handoffCopy: document.getElementById('handoffCopy'),
                 beginGuessing: document.getElementById('beginGuessing'),
                 resetGame: document.getElementById('resetGame'),
                 guessForm: document.getElementById('guessForm'),
@@ -1052,6 +1070,18 @@
 
             function formatCode(value) {
                 return String(value).padStart(3, '0');
+            }
+
+            function createRandomCode() {
+                if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+                    const values = new Uint32Array(1);
+                    const limit = Math.floor(0x100000000 / 1000) * 1000;
+                    do {
+                        window.crypto.getRandomValues(values);
+                    } while (values[0] >= limit);
+                    return values[0] % 1000;
+                }
+                return Math.floor(Math.random() * 1000);
             }
 
             function cleanNumericInput(event) {
@@ -1135,6 +1165,8 @@
                 elements.toggleSecret.textContent = '번호 보기';
                 elements.toggleSecret.setAttribute('aria-pressed', 'false');
                 elements.secretError.textContent = '';
+                elements.handoffTitle.textContent = '금고가 잠겼습니다!';
+                elements.handoffCopy.textContent = '출제자는 추측자에게 화면을 넘겨주세요. 비밀 번호 입력칸은 이미 비워졌습니다. 추측자가 준비되면 아래 버튼을 누릅니다.';
                 elements.guessCode.value = '';
                 elements.guessError.textContent = '';
                 elements.guessControls.hidden = false;
@@ -1150,6 +1182,20 @@
                 elements.secretCode.focus();
             }
 
+            function lockVault(code, randomMode = false) {
+                resetState();
+                state.secret = code;
+                elements.secretError.textContent = '';
+                elements.secretCode.value = '';
+                elements.handoffTitle.textContent = randomMode ? '랜덤 금고가 잠겼습니다!' : '금고가 잠겼습니다!';
+                elements.handoffCopy.textContent = randomMode
+                    ? '컴퓨터가 000~999 사이의 번호를 정했습니다. 정답은 화면에 표시되지 않았습니다. 준비되면 아래 버튼을 누르세요.'
+                    : '출제자는 추측자에게 화면을 넘겨주세요. 비밀 번호 입력칸은 이미 비워졌습니다. 추측자가 준비되면 아래 버튼을 누릅니다.';
+                updateDashboard();
+                showPhase('handoff');
+                elements.beginGuessing.focus();
+            }
+
             function handleSetupSubmit(event) {
                 event.preventDefault();
                 const code = parseCode(elements.secretCode.value);
@@ -1160,13 +1206,11 @@
                     return;
                 }
 
-                resetState();
-                state.secret = code;
-                elements.secretError.textContent = '';
-                elements.secretCode.value = '';
-                updateDashboard();
-                showPhase('handoff');
-                elements.beginGuessing.focus();
+                lockVault(code);
+            }
+
+            function handleRandomSecret() {
+                lockVault(createRandomCode(), true);
             }
 
             function handleBeginGuessing() {
@@ -1349,6 +1393,7 @@
             elements.secretCode.addEventListener('input', cleanNumericInput);
             elements.guessCode.addEventListener('input', cleanNumericInput);
             elements.setupForm.addEventListener('submit', handleSetupSubmit);
+            elements.randomSecret.addEventListener('click', handleRandomSecret);
             elements.beginGuessing.addEventListener('click', handleBeginGuessing);
             elements.guessForm.addEventListener('submit', handleGuessSubmit);
             elements.resetGame.addEventListener('click', () => beginNewSetup(false));
